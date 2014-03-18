@@ -1,4 +1,6 @@
-<?php 
+<?php
+
+
 class bbps_support_urgent_topics_widget extends WP_Widget {
 	
 	function bbps_support_urgent_topics_widget(){
@@ -11,11 +13,11 @@ class bbps_support_urgent_topics_widget extends WP_Widget {
 	}
 	
 	function form( $instance ){
-	$defaults = array(
-		'title' => 'Urgent Topics',
-		'show_urgent_list_admin' => '',
-		'show_urgent_list_mod' => '',
-		'show_urgent_list_user' => '',
+        $defaults = array(
+            'title' => 'Urgent Topics',
+            'show_urgent_list_admin' => '',
+            'show_urgent_list_mod' => '',
+            'show_urgent_list_user' => '',
 		);
 		
 		$instance = wp_parse_args( (array) $instance, $defaults );

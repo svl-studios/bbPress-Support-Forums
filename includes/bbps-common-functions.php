@@ -29,6 +29,14 @@ function bbps_is_support_forum( $forum_id ){
 	else
 		return false;
 }
+function bbps_is_voting_forum( $forum_id ){
+
+	$voting_forum = get_post_meta( $forum_id, '_bbps_is_voting', true );
+	if ($voting_forum == 1)
+		return true;
+	else
+		return false;
+}
 
 //must be used without the topic loop checks if the topic is part of the prem forum
 function bbps_is_topic_premium2($id){

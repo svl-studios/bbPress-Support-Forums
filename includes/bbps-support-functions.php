@@ -28,40 +28,67 @@ function bbps_get_update_capabilities(){
 /* @TODO ASAP */
 /* split this function up as its getting way to big now with all these extra features */
 
- add_action('bbp_template_before_single_topic', 'bbps_add_support_forum_features');
-function bbps_add_support_forum_features(){	
+add_action('bbp_template_before_single_topic', 'bbps_add_support_forum_features');
+function bbps_add_support_forum_features(){
 	//only display all this stuff if the support forum option has been selected.
 	if (bbps_is_support_forum(bbp_get_forum_id())){
 		$can_edit = bbps_get_update_capabilities();
-		$topic_id = bbp_get_topic_id();
-		$status = bbps_get_topic_status($topic_id);
-		$forum_id = bbp_get_forum_id();
-		$user_id = get_current_user_id();
-		
-		
-		?> <div id="bbps_support_forum_options"> <?php
-		//get out the option to tell us who is allowed to view and update the drop down list.
-		if ( $can_edit == true ){ ?>
-			<?php bbps_generate_status_options($topic_id,$status);
-		}else{
-		?>
-			This topic is: <?php echo $status ;
-		}
-		?> </div> <?php
-		//has the user enabled the move topic feature?
-		if( (get_option('_bbps_enable_topic_move') == 1) && (current_user_can('administrator') || current_user_can('bbp_moderator')) ) { 
-		?>
-		<div id ="bbps_support_forum_move">
-			<form id="bbps-topic-move" name="bbps_support_topic_move" action="" method="post">
-				<label for="bbp_forum_id">Move topic to: </label><?php bbp_dropdown(); ?>
-				<input type="submit" value="Move" name="bbps_topic_move_submit" />
-				<input type="hidden" value="bbps_move_topic" name="bbps_action"/>
-				<input type="hidden" value="<?php echo $topic_id ?>" name="bbps_topic_id" />
-				<input type="hidden" value="<?php echo $forum_id ?>" name="bbp_old_forum_id" />
-			</form>
-		</div>  <?php
-			
-		}
+        if($can_edit){
+            $topic_id = bbp_get_topic_id();
+            $status = bbps_get_topic_status($topic_id);
+            $forum_id = bbp_get_forum_id();
+            $user_id = get_current_user_id();
+            ?>
+            <div class="row-fluid">
+            <div id="bbps_support_forum_options" class="span6 well"> <?php
+            //get out the option to tell us who is allowed to view and update the drop down list.
+            if ( $can_edit == true ){ ?>
+                <?php bbps_generate_status_options($topic_id,$status);
+            }else{ ?>
+                This topic is: <?php echo $status ;
+            }
+            ?> </div> <?php
+            //has the user enabled the move topic feature?
+            if( (get_option('_bbps_enable_topic_move') == 1) && (current_user_can('administrator') || current_user_can('bbp_moderator')) ) {
+                ?>
+                <div id="bbps_support_forum_move" class="span6 well">
+                    <form id="bbps-topic-move" name="bbps_support_topic_move" action="" method="post">
+                        <label for="bbp_forum_id">Move topic to: </label><?php bbp_dropdown(); ?>
+                        <input type="submit" value="Move" name="bbps_topic_move_submit" />
+                        <input type="hidden" value="bbps_move_topic" name="bbps_action"/>
+                        <input type="hidden" value="<?php echo $topic_id ?>" name="bbps_topic_id" />
+                        <input type="hidden" value="<?php echo $forum_id ?>" name="bbp_old_forum_id" />
+                    </form>
+                </div>
+                <?php
+            }
+            ?> </div> <!-- row --><?php
+        }
+	}
+}
+add_action('bbp_theme_before_reply_form_submit_button', 'bbps_bbp_theme_before_reply_form_submit_button');
+function bbps_bbp_theme_before_reply_form_submit_button(){
+	//only display all this stuff if the support forum option has been selected.
+	if (bbps_is_support_forum(bbp_get_forum_id())){
+		$can_edit = bbps_get_update_capabilities();
+        if($can_edit){
+            $topic_id = bbp_get_topic_id();
+            $status = bbps_get_topic_status($topic_id);
+            $forum_id = bbp_get_forum_id();
+            $user_id = get_current_user_id();
+            ?>
+            <div class="row-fluid">
+            <div id="bbps_support_forum_options" class="span6 well"> <?php
+            //get out the option to tell us who is allowed to view and update the drop down list.
+            if ( $can_edit == true ){ ?>
+                <?php bbps_generate_status_options($topic_id,$status,false);
+            }else{ ?>
+                This topic is: <?php echo $status ;
+            }
+            ?> </div> <?php
+
+            ?> </div> <!-- row --><?php
+        }
 	}
 }
 
@@ -87,8 +114,9 @@ function bbps_get_topic_status($topic_id){
 	}
 }
 
+
 //generates a drop down list with the support forum topic status only for admin and moderators tho.
-function bbps_generate_status_options($topic_id){
+function bbps_generate_status_options($topic_id, $status, $button = true){
 	
 	$dropdown_options = get_option( '_bbps_used_status' );
 	$status = get_post_meta( $topic_id, '_bbps_topic_status', true );
@@ -109,7 +137,9 @@ function bbps_generate_status_options($topic_id){
 			if ( $dropdown_options['notres'] == 1 ) {?> <option value="2" <?php selected( $value,2 ) ; ?> >resolved</option> <?php } 
 			if ( $dropdown_options['notsup'] == 1 ) {?> <option value="3" <?php selected( $value,3 ) ; ?> >not a support question</option> <?php } ?>
 		</select>
+        <?php if($button){ ?>
 		<input type="submit" value="Update" name="bbps_support_submit" />
+        <?php } ?>
 		<input type="hidden" value="bbps_update_status" name="bbps_action"/>
 		<input type="hidden" value="<?php echo $topic_id ?>" name="bbps_topic_id" />
 	</form> 
@@ -117,6 +147,8 @@ function bbps_generate_status_options($topic_id){
 }
 
 function bbps_update_status(){
+    $can_edit = bbps_get_update_capabilities();
+    if(!$can_edit)return;
 	$topic_id = $_POST['bbps_topic_id'];
 	$status = $_POST['bbps_support_option'];
 	//check if the topic already has resolved meta - if it does then delete it before readding
@@ -165,21 +197,24 @@ function bbps_urgent_topic_link
 Checks the status of the option and generates and displays 
 a link based on if the topic is already marked as urgent
 */
-function bbps_urgent_topic_link(){
-	//bail if option not set or user permission not up to scratch or if the forum has not been set as a support forum
+
+function bbps_filter_get_topic_admin_links( $args, $defaults=array() ) {
+    //bail if option not set or user permission not up to scratch or if the forum has not been set as a support forum
 	if( (get_option('_bbps_status_permissions_urgent') == 1) && (current_user_can('administrator') || current_user_can('bbp_moderator')) && (bbps_is_support_forum(bbp_get_forum_id())) ) {
 	$topic_id = bbp_get_topic_id();
 		//1 = urgent topic 0 or nothing is topic not urgent so we give the admin / mods the chance to make it urgent
 		if ( get_post_meta($topic_id, '_bbps_urgent_topic', true) != 1 ){
 			$urgent_uri = add_query_arg( array( 'action' => 'bbps_make_topic_urgent', 'topic_id' => $topic_id ) );
-			echo '<span class="bbp-admin-links bbps-links"><a href="' . $urgent_uri . '">Urgent</a> | </span>';
+			$args['links']['urgent'] = '<a href="'. $urgent_uri . '">Urgent</a>';
 		}
 
 	}
-	return;
+    $args = wp_parse_args( $args, $defaults );
+    return $args;
 }
+add_filter('bbp_before_get_topic_admin_links_parse_args', 'bbps_filter_get_topic_admin_links' );
 
-add_action('bbp_theme_after_reply_admin_links', 'bbps_urgent_topic_link');
+
 
 //check if the url generated above has been clicked and generated
 if ( (isset($_GET['action']) && isset($_GET['topic_id']) && $_GET['action'] == 'bbps_make_topic_urgent')  )
@@ -299,13 +334,13 @@ add_action( 'bbp_template_before_single_topic' , 'bbps_display_claimed_message' 
 */
 function bbps_assign_topic_form(){
 
-	if( (get_option('_bbps_topic_assign') == 1) && (current_user_can('administrator') || current_user_can('bbp_moderator')) ) { 
+	if( (get_option('_bbps_topic_assign') == 1) && (current_user_can('administrator') || current_user_can('bbp_moderator')) ) {
 		$topic_id = bbp_get_topic_id();
 		$topic_assigned = get_post_meta($topic_id, 'bbps_topic_assigned', true);
 		global $current_user;
 		get_currentuserinfo();
 		$current_user_id = $current_user->ID;
-	?>	<div id="bbps_support_forum_options"> <?php
+	?>	<div id="bbps_support_forum_options" class="well"> <?php
 			
 			$user_login = $current_user->user_login;
 			if(!empty($topic_assigned)){
@@ -401,17 +436,24 @@ EMAILMSG;
 
 // I believe this Problem is because your Plugin is loading at the wrong time, and can be fixed by wrapping your plugin in a wrapper class.
 //need to find a hook or think of the best way to do this
+add_action('init','dtbaker_bbps_activation_done');
+function dtbaker_bbps_activation_done(){
+//    if($_SERVER['REMOTE_ADDR'] == '124.191.165.183'){
+//        print_r($_POST);exit;
+//    }
 	if (!empty($_POST['bbps_support_topic_assign'])){
 		bbps_assign_topic($_POST);
 	}
 	
-	if (!empty($_POST['bbps_support_submit'])){
+	//if (!empty($_POST['bbps_support_submit'])){
+	if (!empty($_POST['bbps_action']) && $_POST['bbps_action'] == 'bbps_update_status'){
 		bbps_update_status($_POST);
 	}
 	
 	if (!empty($_POST['bbps_topic_move_submit'])){
 		bbps_move_topic($_POST);
 	}
+}
 
 // adds a class and status to the front of the topic title
 function bbps_modify_title($title, $topic_id = 0){
@@ -430,17 +472,17 @@ function bbps_modify_title($title, $topic_id = 0){
 
 	//2 is the resolved status ID
 	if (get_post_meta( $topic_id, '_bbps_topic_status', true ) == 2)
-		echo '<span class="resolved"> [Resolved] </span>';
+		echo '<span class="label label-success">Resolved</span>';
 	//we only want to display the urgent topic status to admin and moderators
 	if (get_post_meta( $topic_id, '_bbps_urgent_topic', true ) == 1 && (current_user_can('administrator') || current_user_can('bbp_moderator')))
-		echo '<span class="urgent"> [Urgent] </span>';
+		echo '<span class="label label-warning">Urgent</span>';
 	//claimed topics also only get shown to admin and moderators and the person who owns the topic
 	if (get_post_meta( $topic_id, '_bbps_topic_claimed', true ) > 0 && (current_user_can('administrator') || current_user_can('bbp_moderator') || $topic_author_id == $user_id ) ){
 		//if this option == 1 we display the users name not [claimed]
 		if( get_option( '_bbps_claim_topic_display' ) == 1)
-			echo '<span class="claimed">['. $claimed_user_name . ']</span>';
+			echo '<span class="label label-info">['. $claimed_user_name . ']</span>';
 		else
-			echo '<span class="claimed"> [Claimed] </span>';
+			echo '<span class="label label-info">Claimed</span>';
 	}
 }
 

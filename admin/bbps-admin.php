@@ -14,14 +14,20 @@ function bbps_extend_forum_attributes_mb($forum_id){
 		$checked = "checked";
 	else
 		$checked = "";
-
+		
 	$support_forum = bbps_is_support_forum( $forum_id );
 	if( $support_forum )
 		$checked1 = "checked";
 	else
 		$checked1 = "";
 
-	?>
+	$voting_forum = bbps_is_voting_forum( $forum_id );
+	if( $voting_forum )
+		$checked2 = "checked";
+	else
+		$checked2 = "";
+
+	?>	
 	<hr />
 
 <!--
@@ -33,15 +39,21 @@ This is not tested enough for people to start using so for now we will only have
 		<small>Click here for more information about creating a premium forum.</small>
 	</p>
 -->
-
+	
 	<p>
-		<strong><?php _e( 'Support Forum:', 'bbps-forum' ); ?></strong>
+		<strong><?php _e( 'Support Forum:', 'bbps' ); ?></strong>
 		<input type="checkbox" name="bbps-support-forum" value="1" <?php echo $checked1; ?>/>
 		<br />
 		<!-- <small>Click here To learn more about the support forum setting.</small> -->
 	</p>
+	<p>
+		<strong><?php _e( 'Voting Forum:', 'bbps' ); ?></strong>
+		<input type="checkbox" name="bbps-voting-forum" value="1" <?php echo $checked2; ?>/>
+		<br />
+		<!-- <small>Click here To learn more about the support forum setting.</small> -->
+	</p>
 
-<?php
+<?php	
 }
 
 //hook into the forum save hook.
@@ -53,23 +65,31 @@ function bbps_forum_attributes_mb_save($forum_id){
 //get out the forum meta
 $premium_forum = get_post_meta( $forum_id, '_bbps_is_premium' );
 $support_forum = get_post_meta( $forum_id, '_bbps_is_support');
+$voting_forum = get_post_meta( $forum_id, '_bbps_is_voting');
 
 	//if we have a value then save it
 	if ( !empty( $_POST['bbps-premium-forum'] ) )
 		update_post_meta($forum_id, '_bbps_is_premium', $_POST['bbps-premium-forum']);
-
+	
 	//the forum used to be premium now its not
 	if ( !empty($premium_forum) && empty( $_POST['bbps-premium-forum'] ) )
 		update_post_meta($forum_id, '_bbps_is_premium', 0);
-
+		
 	//support options
 	if ( !empty( $_POST['bbps-support-forum'] ) )
 		update_post_meta($forum_id, '_bbps_is_support', $_POST['bbps-support-forum']);
+	
+	//the forum used to be premium now its not
+	if ( !empty($support_forum) && empty( $_POST['bbps-support-forum'] ) )
+		update_post_meta($forum_id, '_bbps_is_support', 0);
+		
+	//voting options
+	if ( !empty( $_POST['bbps-voting-forum'] ) )
+		update_post_meta($forum_id, '_bbps_is_voting', $_POST['bbps-voting-forum']);
 
 	//the forum used to be premium now its not
-	if ( !empty($premium_forum) && empty( $_POST['bbps-support-forum'] ) )
-		update_post_meta($forum_id, '_bbps_is_support', 0);
-
+	if ( !empty($voting_forum) && empty( $_POST['bbps-voting-forum'] ) )
+		update_post_meta($forum_id, '_bbps_is_voting', 0);
 
 
 	return $forum_id;
@@ -159,6 +179,12 @@ $support_forum = get_post_meta( $forum_id, '_bbps_is_support');
 
 	 	add_settings_field( '_bbps_claim_topic_display', __( 'Display Username:', 'bbps-forum' ), 'bbps_admin_setting_callback_claim_topic_display',      'bbpress', 'bbps-topic_status-setting' );
 	 	register_setting  ( 'bbpress', '_bbps_claim_topic_display', 'intval');
+
+// email notification
+	 	add_settings_field( '_bbps_notification_subject', __( 'Email Notification Subject:', 'bbps-forum' ), 'bbps_admin_setting_callback_notifiation_subject',      'bbpress', 'bbps-topic_status-setting' );
+	 	register_setting  ( 'bbpress', '_bbps_notification_subject');
+	 	add_settings_field( '_bbps_notification_message', __( 'Email Notification Message:', 'bbps-forum' ), 'bbps_admin_setting_callback_notifiation_message',      'bbpress', 'bbps-topic_status-setting' );
+	 	register_setting  ( 'bbpress', '_bbps_notification_message');
 
 
 

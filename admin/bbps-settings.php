@@ -3,19 +3,19 @@
 function bbps_admin_setting_callback_getshopped_section(){
 ?>
 	<p><?php _e( 'User ranking allows you to differentiate and reward your forum users with Custom Titles based on the number of topics and replies they have contributed to.', 'bbps-forum' ); ?></p>
-<?php
+<?php	
 }
 
 function bbps_admin_setting_callback_status_section(){
 ?>
 	<p><?php _e( 'Enable and configure the settings for topic statuses these will be displayed on each topic', 'bbps-forum' ); ?></p>
-<?php
+<?php	
 }
 
 function bbps_admin_setting_callback_support_forum_section(){
 ?>
 	<p><?php _e( 'Enable and configure the settings for support forums, these options will be displayed on each topic within your support forums', 'bbps-forum' ); ?></p>
-<?php
+<?php	
 
 }
 
@@ -134,7 +134,6 @@ function bbps_admin_setting_callback_claim_topic_display(){
 ?>
 	<input id="bbps_claim_topic_display" name="_bbps_claim_topic_display" <?php checked( bbps_is_topic_claim_display_enabled(),1 ); ?> type="checkbox"  value="1" />
 	<label for="bbps_claim_topic_display"><?php _e( 'By selecting this option if a topic is claimed the claimed persons username will be displayed next to the topic title instead of the words [claimed], leaving this unchecked will default to [claimed]', 'bbpress' ); ?></label>
-	<br /><br /><hr />
 <?php
 
 }
@@ -144,7 +143,41 @@ function bbps_admin_setting_callback_assign_topic(){
 	<input id="bbps_topic_assign" name="_bbps_topic_assign" <?php checked( bbps_is_topic_assign_enabled(),1 ); ?> type="checkbox"  value="1" />
 	<label for="bbps_topic_assign"><?php _e( 'Allow administrators and forum moderators to assign topics to other administrators and forum moderators', 'bbpress' ); ?></label>
 <?php
-
 }
 
-?>
+function bbps_admin_setting_callback_notifiation_subject(){
+
+        $subject = get_option('_bbps_notification_subject');
+        if( empty($subject) ){
+            $subject = __('Your registration at %BLOGNAME%');
+        }
+        ?>
+        <input type="text" name="_bbps_notification_subject" value='<?php echo htmlspecialchars($subject); ?>' class='wide' />
+    <br/>
+        <i><?php _e("<code>%USERNAME%</code> will be replaced with a username."); ?></i><br />
+        <i><?php _e("<code>%PASSWORD%</code> will be replaced with the user's password."); ?></i><br />
+        <i><?php _e("<code>%BLOGNAME%</code> will be replaced with the name of your blog."); ?></i>
+        <i><?php _e("<code>%BLOGURL%</code> will be replaced with the url of your blog."); ?></i>
+<?php }
+function bbps_admin_setting_callback_notifiation_message(){
+
+                                        $message = get_option('_bbps_notification_message');
+										if( empty($message) ){
+											$message = __('Thanks for signing up to our blog.
+
+You can login with the following credentials by visiting %BLOGURL%
+
+Username : %USERNAME%
+Password : %PASSWORD%
+
+We look forward to your next visit!
+
+The team at %BLOGNAME%');
+										}
+										?>
+										<textarea name="_bbps_notification_message" class='wide' style="width:100%; height:250px;"><?php echo htmlspecialchars($message); ?></textarea>
+    <br/>
+										<i><?php _e("<code>%BLOGNAME%</code> will be replaced with the name of your blog."); ?></i>
+										<i><?php _e("<code>%BLOGURL%</code> will be replaced with the url of your blog."); ?></i>
+<?php
+}
