@@ -3,8 +3,8 @@
 Plugin Name: GetShopped Support Forum Plugin
 Plugin URI: http://getshopped.org
 Description: Turn your new bb-Press 2.0 forums into support forums
-Author: Mychelle, GetShopped, mufasa
-Version: 3.0.2
+Author: dtbaker, Mychelle, GetShopped, mufasa
+Version: 3.0.3
 */
 
 //////
