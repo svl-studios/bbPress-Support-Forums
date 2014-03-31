@@ -145,40 +145,45 @@ class bbps_support_register_widget extends WP_Widget {
                 }
             </script>
 
-        <!-- Button to trigger modal -->
-        <a href="#ajax_register" role="button" class="btn" data-toggle="modal"><?php _e('Register');?></a>
+        <!-- Button trigger modal -->
+        <button class="btn btn-primary" data-toggle="modal" data-target="#ajax_register"><?php _e('Register');?></button>
 
         <!-- Modal -->
-        <div id="ajax_register" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="ajax_register_label" aria-hidden="true">
-          <div class="modal-header">
-            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
-            <h3 id="ajax_register_label"><?php _e('Forum Registration');?></h3>
-          </div>
-          <div class="modal-body">
-              <div id="ajax_register_status"></div>
-            <form name="ajax_register_form" id="ajax_register_form" action="#" method="post">
-				<!--<p>
-					<label><?php /*_e('Envato Item Purchase Code') */?><br />
-					<input type="text" name="purchase_code" id="purchase_code" class="input-xlarge" tabindex="18" /></label>
-				</p>-->
-				<p>
-					<label><?php _e('Username') ?><br />
-					<input type="text" name="user_login" id="user_login" class="input-xlarge" value="" tabindex="19" /></label>
-				</p>
-				<p>
-					<label><?php _e('E-mail') ?><br />
-					<input type="text" name="user_email" id="user_email" class="input-xlarge" value="" tabindex="20" /></label>
-				</p>
-				<?php do_action('register_form'); ?>
-                <input type="hidden" name="register_ajax_widget" value="1"/>
-				<p id="reg_passmail"><?php _e('A password will be e-mailed to you which you can use to access the forum.') ?></p>
-			</form>
-          </div>
-          <div class="modal-footer">
-            <button class="btn" data-dismiss="modal" aria-hidden="true"><?php _e('Close');?></button>
-            <button class="btn btn-primary" id="register_button" onclick="return ajax_do_register();" tabindex="21"><?php _e('Register');?></button>
+        <div class="modal fade" id="ajax_register" tabindex="-1" role="dialog" aria-labelledby="ajax_registerLabel" aria-hidden="true">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h4 class="modal-title" id="ajax_registerLabel"><?php _e('Forum Registration');?></h4>
+              </div>
+              <div class="modal-body">
+                <div id="ajax_register_status"></div>
+                <form name="ajax_register_form" id="ajax_register_form" action="#" method="post">
+                    <!--<p>
+                        <label><?php /*_e('Envato Item Purchase Code') */?><br />
+                        <input type="text" name="purchase_code" id="purchase_code" class="input-xlarge" tabindex="18" /></label>
+                    </p>-->
+                    <div class="form-group">
+                        <label for="register_widget_username"><?php _e('Username') ?></label>
+                        <input type="text" class="form-control" name="user_login" id="register_widget_username" placeholder="">
+                      </div>
+                    <div class="form-group">
+                        <label for="register_widget_email"><?php _e('E-mail') ?></label>
+                        <input type="email" class="form-control" name="user_email" id="register_widget_email" placeholder="">
+                      </div>
+                    <?php do_action('register_form'); ?>
+                    <input type="hidden" name="register_ajax_widget" value="1"/>
+                    <p id="reg_passmail" class="help-block"><?php _e('A password will be e-mailed to you which you can use to access the forum.') ?></p>
+                </form>
+              </div>
+              <div class="modal-footer">
+                  <button type="button" class="btn btn-default" data-dismiss="modal"><?php _e('Close');?></button>
+                <button class="btn btn-primary" id="register_button" onclick="return ajax_do_register();" tabindex="21"><?php _e('Register');?></button>
+              </div>
+            </div>
           </div>
         </div>
+
 
         <?php
         echo $after_widget . " ";

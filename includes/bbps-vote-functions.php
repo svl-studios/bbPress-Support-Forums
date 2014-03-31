@@ -42,8 +42,10 @@ function bbps_add_voting_forum_features(){
 
         $votes = bbps_get_topic_votes($topic_id);
         ?>
-        <div class="row-fluid">
-        <div id="bbps_voting_forum_options" class="span6 well"> <?php
+        <div class="row">
+        <div id="bbps_voting_forum_options" class="col-md-6">
+            <div class="well">
+            <?php
         //get out the option to tell us who is allowed to view and update the drop down list.
          ?>
             Votes: <?php echo count($votes);
@@ -60,6 +62,7 @@ function bbps_add_voting_forum_features(){
             }else{
                 echo '(please login to vote)';
             }?>
+        </div>
         </div>
         </div> <!-- row -->
     <?php

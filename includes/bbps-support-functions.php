@@ -39,8 +39,9 @@ function bbps_add_support_forum_features(){
             $forum_id = bbp_get_forum_id();
             $user_id = get_current_user_id();
             ?>
-            <div class="row-fluid">
-            <div id="bbps_support_forum_options" class="span6 well"> <?php
+            <div class="row">
+            <div class="col-md-6">
+            <div id="bbps_support_forum_options" class="well"> <?php
             //get out the option to tell us who is allowed to view and update the drop down list.
             if ( $can_edit == true ){ ?>
                 <?php bbps_generate_status_options($topic_id,$status);
@@ -62,7 +63,7 @@ function bbps_add_support_forum_features(){
                 </div>
                 <?php
             }
-            ?> </div> <!-- row --><?php
+            ?> </div> </div> <!-- row --><?php
         }
 	}
 }
@@ -77,8 +78,9 @@ function bbps_bbp_theme_before_reply_form_submit_button(){
             $forum_id = bbp_get_forum_id();
             $user_id = get_current_user_id();
             ?>
-            <div class="row-fluid">
-            <div id="bbps_support_forum_options" class="span6 well"> <?php
+            <div class="row">
+            <div class="col-md-6">
+            <div id="bbps_support_forum_options" class="well"> <?php
             //get out the option to tell us who is allowed to view and update the drop down list.
             if ( $can_edit == true ){ ?>
                 <?php bbps_generate_status_options($topic_id,$status,false);
@@ -87,7 +89,7 @@ function bbps_bbp_theme_before_reply_form_submit_button(){
             }
             ?> </div> <?php
 
-            ?> </div> <!-- row --><?php
+            ?> </div> </div> <!-- row --><?php
         }
 	}
 }
