@@ -25,6 +25,23 @@ function dtbaker_vote_bbp_topic_pagination($options){
     return $options;
 }
 
+function bbps_voting_is_admin(){
+
+	global $current_user;
+	$current_user = wp_get_current_user();
+	$user_id = $current_user->ID;
+
+	$topic_author_id = bbp_get_topic_author_id();
+	$permissions = get_option('_bbps_status_permissions');
+	$can_edit = "";
+	//check the users permission this is easy
+	if( $permissions['admin'] == 1 && current_user_can('administrator') || $permissions['mod'] == 1 && current_user_can('bbp_moderator') ){
+		$can_edit = true;
+	}
+	return $can_edit;
+}
+
+
 add_action('bbp_template_before_single_topic', 'bbps_add_voting_forum_features');
 function bbps_add_voting_forum_features(){
 	//only display all this stuff if the support forum option has been selected.
@@ -43,31 +60,121 @@ function bbps_add_voting_forum_features(){
         $votes = bbps_get_topic_votes($topic_id);
         ?>
         <div class="row">
-        <div id="bbps_voting_forum_options" class="col-md-6">
-            <div class="well">
-            <?php
-        //get out the option to tell us who is allowed to view and update the drop down list.
-         ?>
-            Votes: <?php echo count($votes);
-            if(is_user_logged_in()){
-            if(in_array($user_id,$votes)){
-                $vote_uri = add_query_arg( array( 'action' => 'bbps_unvote_for_topic', 'topic_id' => $topic_id ) );
-                ?>
-                Vote Successful. Thanks! (<a href="<?php echo $vote_uri;?>">undo vote</a>)
-            <?php }else{
-                $vote_uri = add_query_arg( array( 'action' => 'bbps_vote_for_topic', 'topic_id' => $topic_id ) );
-                ?>
-                <a href="<?php echo $vote_uri;?>" class="btn btn-primary">Vote for this!</a>
-                <?php }
-            }else{
-                echo '(please login to vote)';
-            }?>
-        </div>
-        </div>
+	        <div id="bbps_voting_forum_options" class="col-md-6">
+	            <div class="well">
+		            Votes: <?php echo count($votes);
+		            if(is_user_logged_in()){
+		            if(in_array($user_id,$votes)){
+		                $vote_uri = add_query_arg( array( 'action' => 'bbps_unvote_for_topic', 'topic_id' => $topic_id ) );
+		                ?>
+		                Vote Successful. Thanks! (<a href="<?php echo $vote_uri;?>">undo vote</a>)
+		            <?php }else{
+		                $vote_uri = add_query_arg( array( 'action' => 'bbps_vote_for_topic', 'topic_id' => $topic_id ) );
+		                ?>
+		                <a href="<?php echo $vote_uri;?>" class="btn btn-primary">Vote for this!</a>
+		                <?php }
+		            }else{
+		                echo '(please login to vote)';
+		            }?>
+		        </div>
+	        </div>
+	        <?php if(bbps_voting_is_admin()){
+		        if(isset($_POST['bbps_topic_feature_accepted'])){
+			        update_post_meta($topic_id, '_bbps_topic_feature_accepted', $_POST['bbps_topic_feature_accepted']);
+			        bbps_update_vote_count($topic_id);
+		        }
+		        if(isset($_POST['bbps_topic_feature_funding_paid'])){
+			        update_post_meta($topic_id, '_bbps_topic_feature_funding_paid', $_POST['bbps_topic_feature_funding_paid']);
+			        bbps_update_vote_count($topic_id);
+		        }
+		        if(isset($_POST['bbps_topic_feature_funding'])){
+			        update_post_meta($topic_id, '_bbps_topic_feature_funding', $_POST['bbps_topic_feature_funding']);
+			        bbps_update_vote_count($topic_id);
+		        }
+		        $feature_accepted = get_post_meta( $topic_id, '_bbps_topic_feature_accepted', true );
+		        ?>
+		        <div id="bbps_voting_forum_options" class="col-md-6">
+		            <div class="well">
+			            <form id="bbps-topic-vote-feature" name="bbps_support_feature" action="" method="post">
+							<input type="hidden" value="bbps_feature_accepted" name="bbps_action"/>
+				            <div>
+					            <label for="bbps_topic_feature_accepted">Feature Accepted? </label>
+								<select name="bbps_topic_feature_accepted" id="bbps_topic_feature_accepted">
+									<option value="0">no</option>
+									<option value="1" <?php echo $feature_accepted ? ' selected' : ''; ?>>yes accepted</option>
+								</select>
+								<input type="submit" value="Update" name="bbps_support_feature_accepted_btn" />
+				            </div>
+				            <div>
+					            <label for="bbps_support_feature_accepted">Funding Level: </label>
+								<input type="text" name="bbps_topic_feature_funding_paid" value="<?php echo get_post_meta( $topic_id, '_bbps_topic_feature_funding_paid', true );?>" size="5">
+					            paid of
+					            <input type="text" name="bbps_topic_feature_funding" value="<?php echo get_post_meta( $topic_id, '_bbps_topic_feature_funding', true );?>" size="5">
+					            total
+								<input type="submit" value="Update" name="bbps_support_feature_funding_btn" />
+				            </div>
+			            </form>
+			        </div>
+		        </div>
+			<?php }else{
+		        $feature_accepted = get_post_meta( $topic_id, '_bbps_topic_feature_accepted', true );
+		        $funding_level = get_post_meta( $topic_id, '_bbps_topic_feature_funding', true );
+		        $funding_level_paid = get_post_meta( $topic_id, '_bbps_topic_feature_funding_paid', true );
+		        ?>
+		        <div id="bbps_voting_forum_options" class="col-md-6">
+		            <div class="well">
+			            <div>
+				            <?php if($feature_accepted){ ?>
+					            This feature request has been <strong>accepted</strong>! It will be worked on asap. Updates will appear below.
+							<?php }else{ ?>
+					            This feature request has not yet been accepted (we are rather busy). Keep voting (or funding) and be sure to subscribe for updates!
+							<?php } ?>
+			            </div>
+			            <hr>
+			            <div>
+				            <?php if($funding_level > 0){ ?>
+								A funding goal of $<?php echo number_format($funding_level,2);?> has been set for this feature request. <br/>
+					            If you would like to contribute please click below: <br/>
+							<?php }else{ ?>
+					            No funding level has been set for this feature request. <br/>
+					            You can still make a contribution below: <br/>
+							<?php } ?>
+
+				            <form class="form-inline" role="form" method="post">
+					            <input type="hidden" name="make_contribution_title" value="<?php echo htmlspecialchars(bbp_get_topic_title($topic_id));?>">
+					            <input type="hidden" name="make_contribution" value="<?php echo htmlspecialchars(bbp_get_topic_permalink($topic_id));?>">
+							  <div class="form-group col-xs-5">
+							    <div class="input-group">
+							      <div class="input-group-addon">$</div>
+							      <input class="form-control" type="number" name="amount" placeholder="Enter amount" value="10">
+							    </div>
+							  </div>
+							  <button type="submit" class="btn btn-primary">Make Contribution</button>
+							</form>
+				            <?php if($funding_level_paid > 0){ ?>
+				            This feature request has raised $<?php echo number_format($funding_level_paid,2);?> so far! Thank you!<br/>
+							<?php } ?>
+
+			            </div>
+			        </div>
+		        </div>
+			<?php
+	        } ?>
         </div> <!-- row -->
     <?php
 	}
 }
+
+add_action('bbp_after_setup_actions','dtbaker_bbps_check_vote_contribution');
+function dtbaker_bbps_check_vote_contribution(){
+	if (!empty($_POST['make_contribution'])){
+
+		$url = "https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&amount=".trim(urlencode($_POST['amount']))."&business=dtbaker@gmail.com&item_name=Contribution+For+Feature&on1=Feature&os1=" . urlencode($_POST['make_contribution_title']) ."&on2=URL&os2=" . urlencode($_POST['make_contribution']) ."&currency_code=USD&cpp_header_image=".urlencode("https://dtbaker.net/files/ucm-paypal2.jpg");
+		header("Location: $url");
+		exit;
+	}
+}
+
 
 
 function bbps_get_topic_votes($topic_id){
@@ -91,12 +198,28 @@ function bbps_modify_vote_title($title, $topic_id = 0){
         if(count($votes)){
             echo ' <span class="badge badge-info">Votes: '.count($votes) .'</span> ';
         }
+	    if(get_post_meta( $topic_id, '_bbps_topic_feature_accepted', true )){
+            // accepted feature, move it to the top.
+            echo ' <span class="label label-info">Accepted Feature!</span> ';
+        }
+        if(get_post_meta( $topic_id, '_bbps_topic_feature_funding', true )){
+            // funding feature, move it to the very top.
+	        $paid = '$'.number_format(get_post_meta( $topic_id, '_bbps_topic_feature_funding_paid', true ),2);
+	        $limit = '$'.number_format(get_post_meta( $topic_id, '_bbps_topic_feature_funding', true ),2);
+            echo ' <span class="label label-success">Funded '.$paid.' of '.$limit.'</span> ';
+        }else if(get_post_meta( $topic_id, '_bbps_topic_feature_funding_paid', true )){
+            // funding feature, move it to the very top.
+	        $paid = '$'.number_format(get_post_meta( $topic_id, '_bbps_topic_feature_funding_paid', true ),2);
+            echo ' <span class="label label-success">Funded '.$paid.'</span> ';
+        }
     }
 
 }
 add_action('bbp_theme_before_topic_title', 'bbps_modify_vote_title');
 
-
+define('_BBPS_FEATURE_ACCEPTED_VOTE_COUNT',10000);
+define('_BBPS_FEATURE_FUNDING_VOTE_COUNT',20000);
+define('_BBPS_FEATURE_FUNDING_PAID_VOTE_COUNT',30000);
 
 function bbps_vote_topic(){
     if(is_user_logged_in()){
@@ -109,11 +232,28 @@ function bbps_vote_topic(){
                 if(!in_array($user_id, $votes)){
                     $votes[]=$user_id;
                     update_post_meta($topic_id, '_bbps_topic_user_votes', implode(',',$votes));
-                    update_post_meta($topic_id, '_bbps_topic_user_votes_count', count($votes));
+	                bbps_update_vote_count($topic_id);
                 }
             }
         }
     }
+}
+function bbps_update_vote_count($topic_id){
+	$votes = bbps_get_topic_votes($topic_id);
+    $vote_count = count($votes);
+    if(get_post_meta( $topic_id, '_bbps_topic_feature_accepted', true )){
+        // accepted feature, move it to the top.
+        $vote_count = count($votes) + _BBPS_FEATURE_ACCEPTED_VOTE_COUNT;
+    }
+    if(get_post_meta( $topic_id, '_bbps_topic_feature_funding', true )){
+        // funding feature, move it to the very top.
+        $vote_count = count($votes) + _BBPS_FEATURE_FUNDING_VOTE_COUNT;
+    }
+    if(get_post_meta( $topic_id, '_bbps_topic_feature_funding_paid', true )){
+        // funding feature, move it to the very top.
+        $vote_count = count($votes) + _BBPS_FEATURE_FUNDING_PAID_VOTE_COUNT + get_post_meta( $topic_id, '_bbps_topic_feature_funding_paid', true );
+    }
+    update_post_meta($topic_id, '_bbps_topic_user_votes_count', $vote_count);
 }
 
 function bbps_unvote_topic(){
