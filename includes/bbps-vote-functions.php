@@ -132,27 +132,31 @@ function bbps_add_voting_forum_features(){
 			            </div>
 			            <hr>
 			            <div>
-				            <?php if($funding_level > 0){ ?>
-								A funding goal of $<?php echo number_format($funding_level,2);?> has been set for this feature request. <br/>
-					            If you would like to contribute please click below: <br/>
+				            <?php if($funding_level < 0){ ?>
+					            Sorry this feature has been marked as "not possible" so funding has been disabled.
 							<?php }else{ ?>
-					            No funding level has been set for this feature request. <br/>
-					            You can still make a contribution below: <br/>
-							<?php } ?>
+					            <?php if($funding_level > 0){ ?>
+									A funding goal of $<?php echo number_format($funding_level,2);?> has been set for this feature request. <br/>
+						            If you would like to contribute please click below: <br/>
+								<?php }else{ ?>
+						            No funding level has been set for this feature request yet. <br/>
+						            You can still make a contribution below: <br/>
+								<?php } ?>
 
-				            <form class="form-inline" role="form" method="post">
-					            <input type="hidden" name="make_contribution_title" value="<?php echo htmlspecialchars(bbp_get_topic_title($topic_id));?>">
-					            <input type="hidden" name="make_contribution" value="<?php echo htmlspecialchars(bbp_get_topic_permalink($topic_id));?>">
-							  <div class="form-group col-xs-5">
-							    <div class="input-group">
-							      <div class="input-group-addon">$</div>
-							      <input class="form-control" type="number" name="amount" placeholder="Enter amount" value="10">
-							    </div>
-							  </div>
-							  <button type="submit" class="btn btn-primary">Make Contribution</button>
-							</form>
-				            <?php if($funding_level_paid > 0){ ?>
-				            This feature request has raised $<?php echo number_format($funding_level_paid,2);?> so far! Thank you!<br/>
+					            <form class="form-inline" role="form" method="post">
+						            <input type="hidden" name="make_contribution_title" value="<?php echo htmlspecialchars(bbp_get_topic_title($topic_id));?>">
+						            <input type="hidden" name="make_contribution" value="<?php echo htmlspecialchars(bbp_get_topic_permalink($topic_id));?>">
+								  <div class="form-group col-xs-5">
+								    <div class="input-group">
+								      <div class="input-group-addon">$</div>
+								      <input class="form-control" type="number" name="amount" placeholder="Enter amount" value="10">
+								    </div>
+								  </div>
+								  <button type="submit" class="btn btn-primary">Make Contribution</button>
+								</form>
+					            <?php if($funding_level_paid > 0){ ?>
+					            This feature request has raised $<?php echo number_format($funding_level_paid,2);?> so far! Thank you!<br/>
+								<?php } ?>
 							<?php } ?>
 
 			            </div>
@@ -195,6 +199,11 @@ function bbps_modify_vote_title($title, $topic_id = 0){
     $forum_id = bbp_get_forum_id();
     if(bbps_is_voting_forum($forum_id)){
         $votes = bbps_get_topic_votes($topic_id);
+	    if(isset($GLOBALS['bbps_feature_request_params']['type']) && $GLOBALS['bbps_feature_request_params']['type'] == 'popular'){
+		    //  hack to get ids of displayed popular posts.
+		    if(!isset($GLOBALS['bbps_popular_ids']))$GLOBALS['bbps_popular_ids']=array();
+		    $GLOBALS['bbps_popular_ids'][] = $topic_id;
+	    }
         if(count($votes)){
             echo ' <span class="badge badge-info">Votes: '.count($votes) .'</span> ';
         }
@@ -308,12 +317,12 @@ function dtbaker_filter_topics_vote_custom_order($clauses) {
                 }
                 $clauses['where'] = str_replace('1 OR ','',$clauses['where']);
 
-            //print_r($clauses);
         }
-    /*if($_SERVER['REMOTE_ADDR'] == '124.191.165.183'){
-        print_r($clauses);
-        echo '</pre>';
-    }*/
+	if(isset($_REQUEST['dtbaker_debug']))print_r($clauses);
+	/*if($_SERVER['REMOTE_ADDR'] == '124.191.165.183'){
+		print_r($clauses);
+		echo '</pre>';
+	}*/
 
    /* }else{
         //if ($wp_query->get('meta_key') == '_bbps_topic_user_votes_count' && $wp_query->get('orderby') == 'meta_value_num')
@@ -343,7 +352,6 @@ add_filter('posts_orderby', 'dtbaker_filter_topics_vote_custom_order_by', 10, 1)
 function bbps_filter_bbp_after_has_topics_parse_args($args){
     $forum_id = bbp_get_forum_id();
     if($forum_id && bbps_is_voting_forum($forum_id)){
-        //if($_SERVER['REMOTE_ADDR'] == '124.191.165.183'){
 
         $args['meta_query'] = array();
         if(isset($_REQUEST['show_resolved']) && $_REQUEST['show_resolved']){
@@ -375,3 +383,108 @@ function bbps_filter_bbp_after_has_topics_parse_args($args){
     return $args;
 }
 add_filter('bbp_after_has_topics_parse_args','bbps_filter_bbp_after_has_topics_parse_args',10,1);
+
+
+/* shortcode added by dtbaker */
+
+add_shortcode('bbps-feature-requests','dtbaker_bbps_feature_requests');
+function dtbaker_bbps_feature_requests($params){
+    $result = '';
+	remove_action('bbp_template_before_topics_loop', 'dtbaker_vote_bbp_template_before_topics_loop');
+	remove_filter('bbp_after_has_topics_parse_args','bbps_filter_bbp_after_has_topics_parse_args',10,1);
+	remove_filter('get_meta_sql', 'dtbaker_filter_topics_vote_custom_order', 10, 1);
+
+    // filter the bbPress query args that are run when [bbp-topic-index] is executed.
+	$GLOBALS['bbps_feature_request_params'] = $params;
+    add_filter('bbp_after_has_topics_parse_args','dtbaker_bbps_feature_requests_parse_args',3,1);
+    // adjust the generated 'where' SQL to perform a table comparison
+    add_filter('get_meta_sql','dtbaker_filter_topics_vote_custom_order',3,6);
+    add_filter('bbp_topic_pagination','dtbaker_bbps_feature_requests_bbp_topic_pagination',3,1);
+    add_filter('bbp_get_forum_pagination_count','dtbaker_bbps_feature_requests_bbp_get_topic_pagination_count',3,1);
+    add_filter('bbp_is_single_forum','dtbaker_bbps_feature_requests_bbp_is_single_forum',3,1);
+    // run the built in bbpress shortcode which does everything nicely
+    $result .= do_shortcode('[bbp-topic-index]');
+    // undo our nasty hacks from above.
+    remove_filter('bbp_after_has_topics_parse_args','dtbaker_bbps_feature_requests_parse_args',3,1);
+    remove_filter('get_meta_sql','dtbaker_filter_topics_vote_custom_order',3,6);
+    remove_filter('bbp_topic_pagination','dtbaker_bbps_feature_requests_bbp_topic_pagination',3,1);
+    remove_filter('bbp_get_forum_pagination_count','dtbaker_bbps_feature_requests_bbp_get_topic_pagination_count',3,1);
+    remove_filter('bbp_is_single_forum','dtbaker_bbps_feature_requests_bbp_is_single_forum',3,1);
+    // (hopefully) output the list of unread posts to logged in users
+    return $result;
+}
+function dtbaker_bbps_feature_requests_bbp_is_single_forum($str){
+	return true;
+}
+function dtbaker_bbps_feature_requests_bbp_get_topic_pagination_count($str){
+	return ' &nbsp; ';
+}
+function dtbaker_bbps_feature_requests_bbp_topic_pagination($args){
+	$args['total'] = 1;
+	return $args;
+}
+function dtbaker_bbps_my_meta_query( $clauses, $wp_query ) {
+  global $wpdb;
+  if ( $wp_query->get( 'dtbaker_bbps_custom_where' ) == 123 ) {
+    $clauses['join'] .= "
+      LEFT JOIN {$wpdb->postmeta} m_status1 ON ({$wpdb->posts}.ID = m_status1.post_id AND m_status1.meta_key = '_bbps_topic_status')
+      LEFT JOIN {$wpdb->postmeta} m_status2 ON ({$wpdb->posts}.ID = m_status2.post_id AND m_status2.meta_key = '_bbps_topic_feature_accepted')
+      LEFT JOIN {$wpdb->postmeta} m_status3 ON ({$wpdb->posts}.ID = m_status3.post_id AND m_status3.meta_key = '_bbps_topic_feature_funding_paid')
+
+    ";
+    $clauses['where'] .= "\n AND ( m_status1.post_id IS NULL OR CAST(m_status1.meta_value AS CHAR) = '1') " ;//OR (m_status2.meta_key = '_bbps_topic_status' AND CAST(m_status2.meta_value AS CHAR) != '2') ) )";
+    $clauses['where'] .= "\n AND ( m_status2.post_id IS NULL OR CAST(m_status2.meta_value AS CHAR) != '1') " ;
+    $clauses['where'] .= "\n AND ( m_status3.post_id IS NULL OR CAST(m_status3.meta_value AS CHAR) = '0') " ;
+	  if(isset($GLOBALS['bbps_popular_ids']) && count($GLOBALS['bbps_popular_ids'])){
+		  $clauses['where'] .= "\n AND ( {$wpdb->posts}.ID NOT IN ( " .implode(",",$GLOBALS['bbps_popular_ids'])." ) ) ";
+	  }
+
+  }
+	if(isset($_REQUEST['dtbaker_debug']))print_r($clauses);
+  return $clauses;
+}
+add_filter( 'posts_clauses', 'dtbaker_bbps_my_meta_query', 10, 2 );
+
+
+// filter the bbPress query args that are run when [bbp-topic-index] is executed.
+function dtbaker_bbps_feature_requests_parse_args($args){
+    if(isset($GLOBALS['bbps_feature_request_params']) && isset($GLOBALS['bbps_feature_request_params']['post_parent'])){
+	    $args['post_parent'] = $GLOBALS['bbps_feature_request_params']['post_parent'];
+	    $bbp = bbpress();
+		$bbp->current_forum_id = $args['post_parent'];
+    }
+    if(isset($GLOBALS['bbps_feature_request_params']['limit'])){
+	    $args['posts_per_page'] = $GLOBALS['bbps_feature_request_params']['limit'];
+    }
+    if(isset($GLOBALS['bbps_feature_request_params']['type']) && $GLOBALS['bbps_feature_request_params']['type'] == 'resolved'){
+		$args['meta_query'] = array();
+        $args['meta_query'][] = array(
+            'key' => '_bbps_topic_status',
+            'value' => 2,
+            'compare' => '='
+        );
+    }else if(isset($GLOBALS['bbps_feature_request_params']['type']) && $GLOBALS['bbps_feature_request_params']['type'] == 'new'){
+		$args['dtbaker_bbps_custom_where'] = 123;
+
+    }else {
+		$args['meta_query'] = array();
+	    // copied from bbps_filter_bbp_after_has_topics_parse_args abpo
+	    $args['orderby']    = 'meta_value_num';
+	    $args['meta_key']   = '_bbps_topic_user_votes_count';
+	    $args['order']      = 'DESC';
+	    $args['meta_query'] = array(
+		    'relation' => 'OR',
+		    array(
+			    'key'     => '_bbps_topic_status',
+			    'compare' => 'NOT EXISTS',
+			    'value'   => '2',
+		    ),
+		    array(
+			    'key'     => '_bbps_topic_status',
+			    'value'   => 2,
+			    'compare' => '!='
+		    )
+	    );
+    }
+    return $args;
+}
