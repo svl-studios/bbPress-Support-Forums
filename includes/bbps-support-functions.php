@@ -78,6 +78,7 @@ function bbps_bbp_theme_before_reply_form_submit_button(){
             $forum_id = bbp_get_forum_id();
             $user_id = get_current_user_id();
             ?>
+	        <p>&nbsp;</p>
             <div class="row">
             <div class="col-md-6">
             <div id="bbps_support_forum_options" class="well"> <?php
@@ -86,6 +87,55 @@ function bbps_bbp_theme_before_reply_form_submit_button(){
                 <?php bbps_generate_status_options($topic_id,$status,false);
             }else{ ?>
                 This topic is: <?php echo $status ;
+            }
+            ?> </div> <?php
+
+            ?> </div>
+            <div class="col-md-6">
+            <div id="bbps_support_forum_options_mod" class="well"> <?php
+            //get out the option to tell us who is allowed to view and update the drop down list.
+            if ( $can_edit == true ){
+	            ?>
+	            <label for="bbps_minutes_spent">Time spent on this thread: </label>
+				<input type="text" name="bbps_minutes_spent" id="bbps_minutes_spent" value="0.00"> minutes
+	            <script type="text/javascript">
+		            var bbps_ticktock_seconds = 0, bbps_ticktock_run = true, bbps_ticktock_doing = false;
+		            jQuery(function(){
+			            jQuery('#bbps_minutes_spent').change(function(){
+				            if(!bbps_ticktock_doing)bbps_ticktock_run=false;
+			            });
+		            });
+		            function bbps_ticktock(){
+			            // runs every seconds.
+			            bbps_ticktock_doing = true;
+			            bbps_ticktock_seconds++;
+			            var minutes = Math.floor(bbps_ticktock_seconds / 60);
+			            var seconds = bbps_ticktock_seconds - (minutes * 60);
+			            jQuery('#bbps_minutes_spent').val( Math.floor( (minutes + (seconds / 60)) * 100) / 100);
+			            if(bbps_ticktock_run){
+				            setTimeout(bbps_ticktock,1000);
+			            }
+			            bbps_ticktock_doing = false;
+		            }
+		            setTimeout(bbps_ticktock,1000);
+	            </script>
+                <?php
+	            // get a history of items for this thread.
+	            $thread_time = get_post_meta( $topic_id, '_bbps_topic_minutes', true );
+	            if(!is_array($thread_time))$thread_time = array();
+	            if(count($thread_time)){
+		            ?>
+	                <ul>
+		                <?php foreach($thread_time as $thread_tim){
+			                $user_info = get_userdata($thread_tim['user_id']);
+			                ?>
+	                        <li>
+		                        User <?php echo $user_info->user_login;?> spent <?php echo htmlspecialchars($thread_tim['time']);?> minutes on <?php echo date('Y-m-d',$thread_tim['recorded']); ?>
+	                        </li>
+	                    <?php } ?>
+	                </ul>
+	            <?php
+	            }
             }
             ?> </div> <?php
 
@@ -129,8 +179,9 @@ function bbps_generate_status_options($topic_id, $status, $button = true){
 		$value = $status;
 	else
 		$value = $default;
-	?>
+	if($button){ ?>
 	<form id="bbps-topic-status" name="bbps_support" action="" method="post">
+		<?php } ?>
 		<label for="bbps_support_options">This topic is: </label>
 		<select name="bbps_support_option" id="bbps_support_options"> 
 			<?php
@@ -144,8 +195,10 @@ function bbps_generate_status_options($topic_id, $status, $button = true){
         <?php } ?>
 		<input type="hidden" value="bbps_update_status" name="bbps_action"/>
 		<input type="hidden" value="<?php echo $topic_id ?>" name="bbps_topic_id" />
-	</form> 
+	<?php if($button) { ?>
+		</form>
 	<?php
+	}
 }
 
 function bbps_update_status(){
@@ -173,6 +226,20 @@ function bbps_update_status(){
 	}
 	
 	update_post_meta( $topic_id, '_bbps_topic_status', $status );
+	if(isset($_POST['bbps_minutes_spent'])){
+		$thread_time = get_post_meta( $topic_id, '_bbps_topic_minutes', true );
+        if(!is_array($thread_time))$thread_time = array();
+		$id = get_current_user_id();
+		if($id){
+			$thread_time[] = array(
+				'user_id' => $id,
+				'recorded' => time(),
+				'time' => $_POST['bbps_minutes_spent'],
+			);
+		}
+		update_post_meta( $topic_id, '_bbps_topic_minutes', $thread_time );
+
+	}
 }
 
 function bbps_move_topic(){
@@ -449,11 +516,11 @@ function dtbaker_bbps_activation_done(){
 	
 	//if (!empty($_POST['bbps_support_submit'])){
 	if (!empty($_POST['bbps_action']) && $_POST['bbps_action'] == 'bbps_update_status'){
-		bbps_update_status($_POST);
+		bbps_update_status();
 	}
 	
 	if (!empty($_POST['bbps_topic_move_submit'])){
-		bbps_move_topic($_POST);
+		bbps_move_topic();
 	}
 }
 
