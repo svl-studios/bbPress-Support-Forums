@@ -67,7 +67,7 @@ function bbps_add_support_forum_features(){
         }
 	}
 }
-add_action('bbp_theme_before_reply_form_submit_button', 'bbps_bbp_theme_before_reply_form_submit_button');
+add_action('bbp_theme_before_reply_form_notices', 'bbps_bbp_theme_before_reply_form_submit_button');
 function bbps_bbp_theme_before_reply_form_submit_button(){
 	//only display all this stuff if the support forum option has been selected.
 	if (bbps_is_support_forum(bbp_get_forum_id())){
@@ -78,7 +78,6 @@ function bbps_bbp_theme_before_reply_form_submit_button(){
             $forum_id = bbp_get_forum_id();
             $user_id = get_current_user_id();
             ?>
-	        <p>&nbsp;</p>
             <div class="row">
             <div class="col-md-6">
             <div id="bbps_support_forum_options" class="well"> <?php
@@ -97,7 +96,9 @@ function bbps_bbp_theme_before_reply_form_submit_button(){
             if ( $can_edit == true ){
 	            ?>
 	            <label for="bbps_minutes_spent">Time spent on this thread: </label>
-				<input type="text" name="bbps_minutes_spent" id="bbps_minutes_spent" value="0.00"> minutes
+	            <br/>
+	            <input type="button" name="gogotimer" onclick="jQuery(this).hide(); return bbps_ticktock();" value="Start Timer">
+				<input type="text" name="bbps_minutes_spent" id="bbps_minutes_spent" value="0.00" size="10"> minutes
 	            <script type="text/javascript">
 		            var bbps_ticktock_seconds = 0, bbps_ticktock_run = true, bbps_ticktock_doing = false;
 		            jQuery(function(){
@@ -116,8 +117,9 @@ function bbps_bbp_theme_before_reply_form_submit_button(){
 				            setTimeout(bbps_ticktock,1000);
 			            }
 			            bbps_ticktock_doing = false;
+			            return false;
 		            }
-		            setTimeout(bbps_ticktock,1000);
+		            //setTimeout(bbps_ticktock,1000);
 	            </script>
                 <?php
 	            // get a history of items for this thread.
@@ -182,7 +184,7 @@ function bbps_generate_status_options($topic_id, $status, $button = true){
 	if($button){ ?>
 	<form id="bbps-topic-status" name="bbps_support" action="" method="post">
 		<?php } ?>
-		<label for="bbps_support_options">This topic is: </label>
+		<label for="bbps_support_options">Change topic status: </label>
 		<select name="bbps_support_option" id="bbps_support_options"> 
 			<?php
 			//we only want to display the options the user has selected. the long term goal is to let users add their own forum statuses
