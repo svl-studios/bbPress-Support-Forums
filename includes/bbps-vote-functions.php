@@ -291,11 +291,11 @@ function dtbaker_filter_topics_vote_custom_order($clauses) {
     //if($_SERVER['REMOTE_ADDR'] == '124.191.165.183'){
     //print_r($wp_query);
         //echo '<pre>';
-        /*if($_SERVER['REMOTE_ADDR'] == '124.191.165.183'){
+        if(isset($_REQUEST['dtbaker_debug'])){
             echo '<pre>';
             print_r($clauses);
-        }*/
-        if(preg_match('#([a-zA-Z_0-9]*postmeta)\.meta_key = \'_bbps_topic_user_votes_count\'#',$clauses['where'],$matches)){
+        }
+        if(false && preg_match('#([a-zA-Z_0-9]*postmeta)\.meta_key = \'_bbps_topic_user_votes_count\'#',$clauses['where'],$matches)){
             //print_r($clauses);
             //print_r($matches);
             // change the inner join to a left outer join,
@@ -318,7 +318,10 @@ function dtbaker_filter_topics_vote_custom_order($clauses) {
                 $clauses['where'] = str_replace('1 OR ','',$clauses['where']);
 
         }
-	if(isset($_REQUEST['dtbaker_debug']))print_r($clauses);
+	if(isset($_REQUEST['dtbaker_debug'])){
+		print_r($clauses);
+		echo '</pre>';
+	}
 	/*if($_SERVER['REMOTE_ADDR'] == '124.191.165.183'){
 		print_r($clauses);
 		echo '</pre>';
@@ -440,7 +443,7 @@ function dtbaker_bbps_my_meta_query( $clauses, $wp_query ) {
 	  }
 
   }
-	if(isset($_REQUEST['dtbaker_debug']))print_r($clauses);
+	//if(isset($_REQUEST['dtbaker_debug']))print_r($clauses);
   return $clauses;
 }
 add_filter( 'posts_clauses', 'dtbaker_bbps_my_meta_query', 10, 2 );
