@@ -181,3 +181,23 @@ The team at %BLOGNAME%');
 										<i><?php _e("<code>%BLOGURL%</code> will be replaced with the url of your blog."); ?></i>
 <?php
 }
+
+function bbps_admin_setting_callback_staff_hours(){
+	// get a list of staff members and work out how many hours they have logged on tickets.
+	$all_users = get_users();
+	$specific_users = array();
+	foreach($all_users as $user){
+	    if($user->has_cap('administrator') || $user->has_cap('bbp_moderator')){
+	        $specific_users[] = $user;
+	    }
+	}
+	?>
+	<ul>
+		<?php foreach($specific_users as $specific_user){ ?>
+		<li>
+			<a href="/forums/users/<?php echo $specific_user->data->user_login;?>" target="_blank"><?php echo $specific_user->data->user_login;?></a>
+		</li>
+		<?php } ?>
+	</ul>
+<?php
+}

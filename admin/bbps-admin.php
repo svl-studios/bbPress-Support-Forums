@@ -186,6 +186,9 @@ $voting_forum = get_post_meta( $forum_id, '_bbps_is_voting');
 	 	add_settings_field( '_bbps_notification_message', __( 'Email Notification Message:', 'bbps-forum' ), 'bbps_admin_setting_callback_notifiation_message',      'bbpress', 'bbps-topic_status-setting' );
 	 	register_setting  ( 'bbpress', '_bbps_notification_message');
 
+		// support hours logged
+		add_settings_field( '_bbps_staff_hours', __( 'Admins and Moderators:', 'bbps-forum' ), 'bbps_admin_setting_callback_staff_hours',      'bbpress', 'bbps-topic_status-setting' );
+
 
 
 }
