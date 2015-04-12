@@ -58,22 +58,38 @@ class bbps_support_register_widget extends WP_Widget {
 			$return = array();
 			if ('POST' == $_SERVER['REQUEST_METHOD'] && !empty($_REQUEST['user_login']) && !empty($_REQUEST['user_email'])) {
 				//require_once( ABSPATH . WPINC . '/registration.php');
-                // todo - recaptcha
-
-				$errors = register_new_user($_POST['user_login'], $_POST['user_email']);
-				if ( !is_wp_error($errors) ) {
-					//Success
-                    // do they have an envato id?
-                    if(isset($_REQUEST['envato_purchase_code']) && !empty($_REQUEST['envato_purchase_code'])){
-                        // add this based on tc plugin.
-                    }
-                    $user_data = get_userdata($errors);
-					$return['result'] = true;
-					$return['message'] = __(sprintf('Thank you %s. Registration is complete. Please check your e-mail.',$user_data->user_login));
-				}else{
-					//Something's wrong
+                // recaptcha time!
+				$ch = curl_init("https://www.google.com/recaptcha/api/siteverify");
+	            curl_setopt($ch, CURLOPT_RETURNTRANSFER,true);
+	            curl_setopt($ch, CURLOPT_HEADER,false);
+	            curl_setopt($ch, CURLOPT_POST,true);
+	            curl_setopt($ch, CURLOPT_POSTFIELDS,array(
+		            "secret" => "6Lcv9gQTAAAAALcnSDSnvJmFk9mcx_k-tvsgMSRn",
+		            "response" => isset($_REQUEST['g-recaptcha-response']) ? $_REQUEST['g-recaptcha-response'] : false,
+		            'remoteip' => $_SERVER['REMOTE_ADDR'],
+	            ));
+				$data = curl_exec($ch);
+	            $result = @json_decode($data,true);
+				if(!$result || !$result['success']){
 					$return['result'] = false;
-					$return['error'] = $errors->get_error_message(). "<br>Username: ".htmlspecialchars(sanitize_user($_POST['user_login'],true));
+					$return['message'] = var_export($result,true);
+				}else {
+
+					$errors = register_new_user( $_POST['user_login'], $_POST['user_email'] );
+					if ( ! is_wp_error( $errors ) ) {
+						//Success
+						// do they have an envato id?
+						if ( isset( $_REQUEST['envato_purchase_code'] ) && ! empty( $_REQUEST['envato_purchase_code'] ) ) {
+							// add this based on tc plugin.
+						}
+						$user_data         = get_userdata( $errors );
+						$return['result']  = true;
+						$return['message'] = __( sprintf( 'Thank you %s. Registration is complete. Please check your e-mail.', $user_data->user_login ) );
+					} else {
+						//Something's wrong
+						$return['result'] = false;
+						$return['error']  = $errors->get_error_message() . "<br>Username: " . htmlspecialchars( sanitize_user( $_POST['user_login'], true ) );
+					}
 				}
 			}
 			$return = json_encode($return);
@@ -143,10 +159,21 @@ class bbps_support_register_widget extends WP_Widget {
                     });
                     return false;
                 }
+                var captcha_ready_callback = function() {
+
+			      };
+                function display_register_captcha(){
+                    grecaptcha.render('register_captcha', {
+			          'sitekey' : '6Lcv9gQTAAAAAJSoiwL4xLYeXpsSxf5lCFypuC57'
+			        });
+	                return true;
+                }
             </script>
 
         <!-- Button trigger modal -->
-        <button class="btn btn-primary" data-toggle="modal" data-target="#ajax_register"><?php _e('Register');?></button>
+        <button class="btn btn-primary" data-toggle="modal" data-target="#ajax_register" onclick="display_register_captcha();"><?php _e('Register');?></button>
+
+	    <script src="https://www.google.com/recaptcha/api.js?onload=captcha_ready_callback&render=explicit" async defer></script>
 
         <!-- Modal -->
         <div class="modal fade" id="ajax_register" tabindex="-1" role="dialog" aria-labelledby="ajax_registerLabel" aria-hidden="true">
@@ -170,6 +197,10 @@ class bbps_support_register_widget extends WP_Widget {
                     <div class="form-group">
                         <label for="register_widget_email"><?php _e('E-mail') ?></label>
                         <input type="email" class="form-control" name="user_email" id="register_widget_email" placeholder="">
+                      </div>
+                    <div class="form-group">
+                        <label for="register_widget_captcha"><?php _e('Captcha Code') ?></label>
+                        <div id="register_captcha"></div>
                       </div>
                     <?php do_action('register_form'); ?>
                     <input type="hidden" name="register_ajax_widget" value="1"/>
