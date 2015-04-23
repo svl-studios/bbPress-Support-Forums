@@ -92,6 +92,7 @@ function bbps_includes(){
 			'bbps-common-functions',		// common functions used through the plugin
 			'bbps-support-functions',		//functions relating the the update and edit of the topic status
 			'bbps-vote-functions',		//functions relating the the update and edit of the topic status
+			'bbps-envato-functions',		//functions relating the the update and edit of the topic status
 			'bbps-core-options',			//sets up the core options
 			'bbps-user-ranking-functions', // contains functions relating to the user ranking
 			'bbps-premium-forum'			//functions relating to the premium restricted forums

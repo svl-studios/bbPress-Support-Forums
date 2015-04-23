@@ -201,3 +201,24 @@ function bbps_admin_setting_callback_staff_hours(){
 	</ul>
 <?php
 }
+
+
+function bbps_admin_setting_callback_envato_api_id(){
+?>
+	<input id="bbps_envato_username" name="_bbps_envato_username"  type="text"  value="<?php echo esc_attr(get_option('_bbps_envato_username',''));?>" />
+	<label for="bbps_envato_username"><?php _e( 'Envato API username for purchase verification', 'bbpress' ); ?></label>
+	<br/>
+	<input id="bbps_envato_api_key" name="_bbps_envato_api_key"  type="text"  value="<?php echo esc_attr(get_option('_bbps_envato_api_key',''));?>" />
+	<label for="bbps_envato_api_key"><?php _e( 'Envato API key for purchase verification', 'bbpress' ); ?></label>
+<?php
+}
+
+function bbps_admin_setting_callback_recaptcha(){
+?>
+	<input id="bbps_recaptcha_client" name="_bbps_recaptcha_client"  type="text"  value="<?php echo esc_attr(get_option('_bbps_recaptcha_client',''));?>" />
+	<label for="bbps_recaptcha_client"><?php _e( 'Registration Recaptcha Public Key', 'bbpress' ); ?></label>
+	<br/>
+	<input id="bbps_recaptcha_secret" name="_bbps_recaptcha_secret"  type="text"  value="<?php echo esc_attr(get_option('_bbps_recaptcha_secret',''));?>" />
+	<label for="bbps_recaptcha_secret"><?php _e( 'Registration Recaptcha Secret Key', 'bbpress' ); ?></label>
+<?php
+}

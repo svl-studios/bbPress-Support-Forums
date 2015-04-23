@@ -189,6 +189,14 @@ $voting_forum = get_post_meta( $forum_id, '_bbps_is_voting');
 		// support hours logged
 		add_settings_field( '_bbps_staff_hours', __( 'Admins and Moderators:', 'bbps-forum' ), 'bbps_admin_setting_callback_staff_hours',      'bbpress', 'bbps-topic_status-setting' );
 
+		add_settings_field( '_bbps_envato_api_key', __( 'Envato Integration:', 'bbps-forum' ), 'bbps_admin_setting_callback_envato_api_id',      'bbpress', 'bbps-topic_status-setting' );
+		register_setting  ( 'bbpress', '_bbps_envato_username');
+		register_setting  ( 'bbpress', '_bbps_envato_api_key');
+
+		add_settings_field( '_bbps_recaptcha_client', __( 'Recaptcha Signup Widget:', 'bbps-forum' ), 'bbps_admin_setting_callback_recaptcha',      'bbpress', 'bbps-topic_status-setting' );
+		register_setting  ( 'bbpress', '_bbps_recaptcha_client');
+		register_setting  ( 'bbpress', '_bbps_recaptcha_secret');
+
 
 
 }

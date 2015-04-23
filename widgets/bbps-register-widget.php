@@ -56,33 +56,62 @@ class bbps_support_register_widget extends WP_Widget {
 	function register(){
 		if( !empty($_REQUEST['register_ajax_widget']) ) {
 			$return = array();
+
+//			$return['result'] = false;
+//			$return['error'] = "Forum registration temporarily closed, please try again later";
+
 			if ('POST' == $_SERVER['REQUEST_METHOD'] && !empty($_REQUEST['user_login']) && !empty($_REQUEST['user_email'])) {
 				//require_once( ABSPATH . WPINC . '/registration.php');
-                // recaptcha time!
-				$ch = curl_init("https://www.google.com/recaptcha/api/siteverify");
-	            curl_setopt($ch, CURLOPT_RETURNTRANSFER,true);
-	            curl_setopt($ch, CURLOPT_HEADER,false);
-	            curl_setopt($ch, CURLOPT_POST,true);
-	            curl_setopt($ch, CURLOPT_POSTFIELDS,array(
-		            "secret" => "6Lcv9gQTAAAAALcnSDSnvJmFk9mcx_k-tvsgMSRn",
-		            "response" => isset($_REQUEST['g-recaptcha-response']) ? $_REQUEST['g-recaptcha-response'] : false,
-		            'remoteip' => $_SERVER['REMOTE_ADDR'],
-	            ));
-				$data = curl_exec($ch);
-	            $result = @json_decode($data,true);
-				if(!$result || !$result['success']){
-					$return['result'] = false;
-					$return['message'] = var_export($result,true);
-				}else {
+
+
+				// check purchase code.
+				$valid_purchase_codes = false;
+				if(!isset($return['result']) && get_option('_bbps_envato_username','') && get_option('_bbps_envato_api_key','')) {
+					$purchase_code       = isset( $_REQUEST['user_purchase_code'] ) ? strtolower(trim($_REQUEST['user_purchase_code'])) : false;
+					if ( strlen( $purchase_code ) > 10 ) {
+						$api_url = 'http://marketplace.envato.com/api/edge/' . get_option('_bbps_envato_username','') . '/' . get_option('_bbps_envato_api_key',''). '/verify-purchase:'.$purchase_code.'.json';
+						$response 	= wp_remote_get($api_url);
+						if( !is_wp_error($response) ) {
+							$api_result = @json_decode( $response['body'], true );
+							if ( $api_result && isset( $api_result['verify-purchase'] ) && is_array( $api_result['verify-purchase'] ) && isset( $api_result['verify-purchase']['item_id'] ) ) {
+								$valid_purchase_codes = array();
+								$valid_purchase_codes[ $purchase_code ] = $api_result['verify-purchase'];
+							}
+						}
+					}
+					if(!$valid_purchase_codes){
+						$return['result'] = false;
+						$return['error']  = "Incorrect Item Purchase code, please make sure it is copied correctly.";
+					}
+				}
+
+				if(!isset($return['result']) && get_option('_bbps_recaptcha_client','') && get_option('_bbps_recaptcha_secret','')) {
+					// recaptcha time!
+					$ch = curl_init( "https://www.google.com/recaptcha/api/siteverify" );
+					curl_setopt( $ch, CURLOPT_RETURNTRANSFER, true );
+					curl_setopt( $ch, CURLOPT_HEADER, false );
+					curl_setopt( $ch, CURLOPT_POST, true );
+					curl_setopt( $ch, CURLOPT_POSTFIELDS, array(
+						"secret"   => get_option('_bbps_recaptcha_secret',''), //"",
+						"response" => isset( $_REQUEST['g-recaptcha-response'] ) ? $_REQUEST['g-recaptcha-response'] : false,
+						'remoteip' => $_SERVER['REMOTE_ADDR'],
+					) );
+					$data   = curl_exec( $ch );
+					$google_result = @json_decode( $data, true );
+					if ( ! $google_result || ! $google_result['success'] ) {
+						$return['result']  = false;
+						$return['message'] = var_export( $google_result, true );
+					}
+				}
+				if(!isset($return['result'])){
 
 					$errors = register_new_user( $_POST['user_login'], $_POST['user_email'] );
 					if ( ! is_wp_error( $errors ) ) {
 						//Success
-						// do they have an envato id?
-						if ( isset( $_REQUEST['envato_purchase_code'] ) && ! empty( $_REQUEST['envato_purchase_code'] ) ) {
-							// add this based on tc plugin.
-						}
 						$user_data         = get_userdata( $errors );
+						if(is_array($valid_purchase_codes) && count($valid_purchase_codes)){
+							update_user_meta( $user_data->ID , 'envato_codes', $valid_purchase_codes);
+						}
 						$return['result']  = true;
 						$return['message'] = __( sprintf( 'Thank you %s. Registration is complete. Please check your e-mail.', $user_data->user_login ) );
 					} else {
@@ -127,7 +156,7 @@ class bbps_support_register_widget extends WP_Widget {
                     //jQuery('<div class="LoginWithAjax_Loading" id="LoginWithAjax_Loading"></div>').prependTo('#LoginWithAjax_Register');
                     //Sort out url
                     //Get POST data
-                    jQuery('#ajax_register_status').attr('class','').html('');
+                    jQuery('#ajax_register_status').attr('class','alert alert-info').html('Processing, please wait...');
                     var postData = {};
                     jQuery.each(jQuery('#ajax_register_form *[name]'), function(index,el){
                         el = jQuery(el);
@@ -144,36 +173,37 @@ class bbps_support_register_widget extends WP_Widget {
                                 if(data.result === true){
                                     jQuery('#ajax_register_form').hide();
                                     jQuery('#register_button').hide();
-                                    jQuery('#ajax_register_status').attr('class','alert').html(data.message);
+                                    jQuery('#ajax_register_status').attr('class','alert alert-info').html(data.message);
                                 }else{
                                     //If there already is an error element, replace text contents, otherwise create a new one and insert it
-                                    jQuery('#ajax_register_status').attr('class','alert alert-error').html(data.error);
+                                    jQuery('#ajax_register_status').attr('class','alert alert-warning').html( typeof data.error != 'undefined' ? data.error : data.message);
                                 }
                             }else{
-                                jQuery('#ajax_register_status').attr('class','invalid').html('An error has occured. Please try again.');
+                                jQuery('#ajax_register_status').attr('class','alert alert-warning').html('An error has occured. Please try again.');
                             }
                         },
                         error: function(){
-                            jQuery('#ajax_register_status').attr('class','invalid').html('An error has occured. Please try again.');
+                            jQuery('#ajax_register_status').attr('class','alert alert-warning').html('An error has occured. Please try again.');
                         }
                     });
                     return false;
                 }
+                <?php if(get_option('_bbps_recaptcha_client','') && get_option('_bbps_recaptcha_secret','')){ ?>
                 var captcha_ready_callback = function() {
 
 			      };
                 function display_register_captcha(){
                     grecaptcha.render('register_captcha', {
-			          'sitekey' : '6Lcv9gQTAAAAAJSoiwL4xLYeXpsSxf5lCFypuC57'
+			          'sitekey' : '<?php echo get_option('_bbps_recaptcha_client','');?>'
 			        });
 	                return true;
                 }
+	            <?php } ?>
             </script>
 
         <!-- Button trigger modal -->
         <button class="btn btn-primary" data-toggle="modal" data-target="#ajax_register" onclick="display_register_captcha();"><?php _e('Register');?></button>
 
-	    <script src="https://www.google.com/recaptcha/api.js?onload=captcha_ready_callback&render=explicit" async defer></script>
 
         <!-- Modal -->
         <div class="modal fade" id="ajax_register" tabindex="-1" role="dialog" aria-labelledby="ajax_registerLabel" aria-hidden="true">
@@ -190,6 +220,13 @@ class bbps_support_register_widget extends WP_Widget {
                         <label><?php /*_e('Envato Item Purchase Code') */?><br />
                         <input type="text" name="purchase_code" id="purchase_code" class="input-xlarge" tabindex="18" /></label>
                     </p>-->
+	                <?php if(get_option('_bbps_envato_username','') && get_option('_bbps_envato_api_key','')){ ?>
+                    <div class="form-group">
+	                    <p class="help-block">This support forum is for verified buyers only. Please enter your unique CodeCanyon Item Purchase Code below (<a href="//dtbaker.net/admin/includes/plugin_envato/images/envato-license-code.gif" target="_blank">click here</a> for instructions).</p>
+                        <label for="register_widget_purchase_code"><?php _e('CodeCanyon Purchase Code') ?></label>
+                        <input type="text" class="form-control" name="user_purchase_code" id="register_widget_purchase_code" placeholder="">
+                      </div>
+	                <?php } ?>
                     <div class="form-group">
                         <label for="register_widget_username"><?php _e('Username') ?></label>
                         <input type="text" class="form-control" name="user_login" id="register_widget_username" placeholder="">
@@ -198,10 +235,13 @@ class bbps_support_register_widget extends WP_Widget {
                         <label for="register_widget_email"><?php _e('E-mail') ?></label>
                         <input type="email" class="form-control" name="user_email" id="register_widget_email" placeholder="">
                       </div>
+				    <?php if(get_option('_bbps_recaptcha_client','') && get_option('_bbps_recaptcha_secret','')){ ?>
+				    <script src="https://www.google.com/recaptcha/api.js?onload=captcha_ready_callback&render=explicit" async defer></script>
                     <div class="form-group">
                         <label for="register_widget_captcha"><?php _e('Captcha Code') ?></label>
                         <div id="register_captcha"></div>
                       </div>
+	                <?php } ?>
                     <?php do_action('register_form'); ?>
                     <input type="hidden" name="register_ajax_widget" value="1"/>
                     <p id="reg_passmail" class="help-block"><?php _e('A password will be e-mailed to you which you can use to access the forum.') ?></p>
