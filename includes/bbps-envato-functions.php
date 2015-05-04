@@ -29,15 +29,34 @@ function bbps_envato_bbp_user_edit_additional_save(){
 		$envato_codes = get_user_meta( $user_id, 'envato_codes', true );
 		if(!$envato_codes)$envato_codes = array();
 		$purchase_code = strtolower( trim( $_POST['user_purchase_code'] ) );
-		$api_url       = 'http://marketplace.envato.com/api/edge/' . get_option( '_bbps_envato_username', '' ) . '/' . get_option( '_bbps_envato_api_key', '' ) . '/verify-purchase:' . $purchase_code . '.json';
-		$response      = wp_remote_get( $api_url );
-		if ( ! is_wp_error( $response ) ) {
-			$api_result = @json_decode( $response['body'], true );
-			if ( $api_result && isset( $api_result['verify-purchase'] ) && is_array( $api_result['verify-purchase'] ) && isset( $api_result['verify-purchase']['item_id'] ) ) {
-				$envato_codes[ $purchase_code ] = $api_result['verify-purchase'];
-				update_user_meta( $user_id, 'envato_codes', $envato_codes );
-			}
+		$api_result = verify_purchase($purchase_code);
+		//echo "Verify purchase code $purchase_code with api result is: ";print_r($api_result);exit;
+		if(is_array($api_result)){
+			$envato_codes[$purchase_code] = $api_result;
+			update_user_meta( $user_id , 'envato_codes', $envato_codes);
 		}
+	}
+}
+function verify_purchase($purchase_code){
+	$purchase_code = strtolower($purchase_code);
+//   $api_url = 'http://marketplace.envato.com/api/edge/' . get_option('_bbps_envato_username','') . '/' . get_option('_bbps_envato_api_key',''). '/verify-purchase:'.$purchase_code.'.json';
+//   $response 	= wp_remote_get($api_url);
+	$api_url = 'https://api.envato.com/v1/market/private/user/verify-purchase:'.$purchase_code.'.json';
+	$response 	= wp_remote_get($api_url, array(
+		'user-agent' => 'dtbaker forums verify',
+		'headers' => array(
+			'Authorization' => 'Bearer ' . get_option('_bbps_envato_api_key',''),
+		),
+	));
+	if( !is_wp_error($response) ) {
+		$api_result = @json_decode( $response['body'], true );
+		if ( $api_result && isset( $api_result['verify-purchase'] ) && is_array( $api_result['verify-purchase'] ) && isset( $api_result['verify-purchase']['item_id'] ) ) {
+			return $api_result['verify-purchase'];
+		}else{
+			return false; // invalid code
+		}
+	}else{
+		return 0; // error
 	}
 }
 add_action('bbp_user_edit_additional','bbps_envato_bbp_user_edit_additional');
@@ -68,7 +87,7 @@ function bbps_envato_bbp_user_edit_additional($edit=true){
 				</ul>
 			<?php } ?>
 
-			<?php if($edit){ ?>
+			<?php if(true){ ?>
 			<p>Submit additional purchase codes here (<a
 					href="//dtbaker.net/admin/includes/plugin_envato/images/envato-license-code.gif" target="_blank">click
 					here</a> for help locating your item purchase code):</p>
@@ -94,29 +113,24 @@ function bbps_envato_notify_purchase_code(){
 			if(!$envato_codes)$envato_codes=array();
 			if(isset($_POST['user_purchase_code']) && strlen($_POST['user_purchase_code']) > 5){
 				$purchase_code = strtolower(trim($_POST['user_purchase_code']));
-				$api_url = 'http://marketplace.envato.com/api/edge/' . get_option('_bbps_envato_username','') . '/' . get_option('_bbps_envato_api_key',''). '/verify-purchase:'.$purchase_code.'.json';
-				$response 	= wp_remote_get($api_url);
-				if( !is_wp_error($response) ) {
-					$api_result = @json_decode( $response['body'], true );
-					if($api_result && isset($api_result['verify-purchase']) && is_array($api_result['verify-purchase']) && isset($api_result['verify-purchase']['item_id'])){
-						$envato_codes[$purchase_code] = $api_result['verify-purchase'];
-						update_user_meta( $user_id , 'envato_codes', $envato_codes);
-						?>
-						<div class="alert alert-info" role="alert">
-							Thank you <strong><?php echo $api_result['verify-purchase']['buyer'];?></strong>! <br/>
-							You have verified your purchase of <em><?php echo $api_result['verify-purchase']['item_name'];?></em> from <em><?php echo $api_result['verify-purchase']['created_at'];?></em>. <br/>
-							You can verify additional purchases from your <a href="<?php bbp_user_profile_edit_url($user_id);?>">profile page</a>.
-						</div>
-						<?php
-					}else{
-						?>
-						<div class="alert alert-error" role="alert">Sorry this license code is not valid. Please send through an email support request for assistance.</div>
-						<?php
-					}
-					//$valid_purchase_codes['123'] = $api_result;
-				}else{
+				$api_result = verify_purchase($purchase_code);
+				if(is_array($api_result)){
+					$envato_codes[$purchase_code] = $api_result;
+					update_user_meta( $user_id , 'envato_codes', $envato_codes);
+					?>
+					<div class="alert alert-info" role="alert">
+						Thank you <strong><?php echo $api_result['buyer'];?></strong>! <br/>
+						You have verified your purchase of <em><?php echo $api_result['item_name'];?></em> from <em><?php echo $api_result['created_at'];?></em>. <br/>
+						You can verify additional purchases from your <a href="<?php bbp_user_profile_edit_url($user_id);?>">profile page</a>.
+					</div>
+					<?php
+				}else if($api_result === 0){
 					?>
 					<div class="alert alert-error" role="alert">Sorry a temporary error occurred while processing your license code request.</div>
+					<?php
+				}else{
+					?>
+					<div class="alert alert-error" role="alert">Sorry this license code is not valid. Please send through an email support request for assistance.</div>
 					<?php
 				}
 			}
