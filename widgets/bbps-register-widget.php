@@ -69,14 +69,10 @@ class bbps_support_register_widget extends WP_Widget {
 				if(!isset($return['result']) && get_option('_bbps_envato_username','') && get_option('_bbps_envato_api_key','')) {
 					$purchase_code       = isset( $_REQUEST['user_purchase_code'] ) ? strtolower(trim($_REQUEST['user_purchase_code'])) : false;
 					if ( strlen( $purchase_code ) > 10 ) {
-						$api_url = 'http://marketplace.envato.com/api/edge/' . get_option('_bbps_envato_username','') . '/' . get_option('_bbps_envato_api_key',''). '/verify-purchase:'.$purchase_code.'.json';
-						$response 	= wp_remote_get($api_url);
-						if( !is_wp_error($response) ) {
-							$api_result = @json_decode( $response['body'], true );
-							if ( $api_result && isset( $api_result['verify-purchase'] ) && is_array( $api_result['verify-purchase'] ) && isset( $api_result['verify-purchase']['item_id'] ) ) {
-								$valid_purchase_codes = array();
-								$valid_purchase_codes[ $purchase_code ] = $api_result['verify-purchase'];
-							}
+						$api_result = verify_purchase($purchase_code);
+						if(is_array($api_result)){
+							$valid_purchase_codes = array();
+							$valid_purchase_codes[ $purchase_code ] = $api_result;
 						}
 					}
 					if(!$valid_purchase_codes){
