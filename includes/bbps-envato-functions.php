@@ -59,6 +59,34 @@ function verify_purchase($purchase_code){
 		return 0; // error
 	}
 }
+// this is for SupportHub to operate correctly, passing the envato_codes as a meta key along with user requests.
+//apply_filters( 'xmlrpc_prepare_user', $_user, $user, $fields )
+add_filter('xmlrpc_prepare_user', '_bbps_xmlrpc_prepare_user', 10, 3);
+function _bbps_xmlrpc_prepare_user($_user, $user, $fields){
+	$envato_codes = get_user_meta( $_user['user_id'], 'envato_codes', true );
+	if ( is_array( $envato_codes ) ) {
+		$_user['envato_codes'] = $envato_codes;
+	}
+	$_user['support_hub'] = 'done';
+	return $_user;
+}
+//do_action( 'wp_insert_post', $post_ID, $post, $update );
+add_action('wp_insert_post','_bbps_wp_insert_post',10,3);
+function _bbps_wp_insert_post($post_ID, $post, $update){
+	if($post->post_status == 'publish' && $post->post_type == 'reply'){
+		$check = get_post_meta($post_ID, 'support_hub', true);
+		$forum_id = bbp_get_topic_forum_id( $post->post_parent );
+		//mail('dtbaker@gmail.com','WP Insert Post Done 2',var_export($post,true).var_export($check,true)."\n" . $forum_id);
+		if($check == 'api'){
+			update_post_meta($post_ID, 'support_hub', 'done'); // change the flag so we don't double process during this hook
+			// run the usual bbpress hooks to update thread counts, send email replies and other stuff
+			do_action( 'bbp_new_reply', $post_ID, $post->post_parent, $forum_id, 0, $post->post_author, false, 0 );
+			do_action( 'bbp_new_reply_post_extras', $post_ID );
+			update_post_meta($post->post_parent, '_bbps_topic_status', 2); // update the thread status to resolved
+		}
+	}
+}
+
 add_action('bbp_user_edit_additional','bbps_envato_bbp_user_edit_additional');
 add_action('bbp_user_display_additional','bbps_envato_bbp_user_display_additional');
 function bbps_envato_bbp_user_display_additional(){
