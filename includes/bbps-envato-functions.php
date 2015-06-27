@@ -67,7 +67,19 @@ function _bbps_xmlrpc_prepare_user($_user, $user, $fields){
 	if ( is_array( $envato_codes ) ) {
 		$_user['envato_codes'] = $envato_codes;
 	}
-	$_user['support_hub'] = 'done';
+	$_user['support_hub'] = array(
+		'reply_options' => array(
+            array(
+                'title' => 'Mark Thread as Resolved',
+                'field' => array(
+                    'type' => 'check',
+                    'value' => 'resolved',
+                    'name' => 'thread_resolved',
+                    'checked' => true,
+                )
+            )
+        )
+	);
 	return $_user;
 }
 //do_action( 'wp_insert_post', $post_ID, $post, $update );
@@ -77,12 +89,22 @@ function _bbps_wp_insert_post($post_ID, $post, $update){
 		$check = get_post_meta($post_ID, 'support_hub', true);
 		$forum_id = bbp_get_topic_forum_id( $post->post_parent );
 		//mail('dtbaker@gmail.com','WP Insert Post Done 2',var_export($post,true).var_export($check,true)."\n" . $forum_id);
-		if($check == 'api'){
-			update_post_meta($post_ID, 'support_hub', 'done'); // change the flag so we don't double process during this hook
-			// run the usual bbpress hooks to update thread counts, send email replies and other stuff
-			do_action( 'bbp_new_reply', $post_ID, $post->post_parent, $forum_id, 0, $post->post_author, false, 0 );
-			do_action( 'bbp_new_reply_post_extras', $post_ID );
-			update_post_meta($post->post_parent, '_bbps_topic_status', 2); // update the thread status to resolved
+		if($check){
+            $data = @json_decode($check,true);
+            if(!is_array($data)){
+                $data = array();
+            }
+            if(!isset($data['done']) || !$data['done']) {
+                $data['done'] = true;
+                update_post_meta($post_ID, 'support_hub', json_encode($data)); // change the flag so we don't double process during this hook
+                // run the usual bbpress hooks to update thread counts, send email replies and other stuff
+                do_action('bbp_new_reply', $post_ID, $post->post_parent, $forum_id, 0, $post->post_author, false, 0);
+                do_action('bbp_new_reply_post_extras', $post_ID);
+                // todo: only set thread status to resolved if ticked in extra data above.
+                if(isset($data['thread_resolved']) && $data['thread_resolved'] == 'resolved'){
+                    update_post_meta($post->post_parent, '_bbps_topic_status', 2); // update the thread status to resolved
+                }
+            }
 		}
 	}
 }
