@@ -9,7 +9,7 @@ class bbps_support_urgent_topics_widget extends WP_Widget {
 				'description' => 'Dsiplay a list of urgent topics in your forum'
 		);
 		
-		$this->WP_Widget('bbps_support_urgent_topics_widget', 'Urgent Topics', $widget_ops);
+		parent::__construct('bbps_support_urgent_topics_widget', 'Urgent Topics', $widget_ops);
 	}
 	
 	function form( $instance ){

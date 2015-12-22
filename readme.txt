@@ -1,11 +1,15 @@
-=== GetShopped Support Forums ===
-Contributors: dtbaker, mychelle, mufusa, getshopped, coachbirgit
-Tags: bbPress 2.0, Support forum, resolved topics, user rankings, topic voting, user signup
+=== bbPress Support Forums ===
+Contributors: roshanbh, dtbaker, mychelle, mufusa, getshopped, coachbirgit
+Tags: bbPress 2.5, Support forum, resolved topics, user rankings, topic voting, user signup
 Requires at least: 3.2
-Tested up to: 3.8.1
+Tested up to: 4.4
 Stable tag: 3.0
 
 The GetShopped support forums plugin is used with bbPress to transform your forums into a support forum.
+
+Forked from : GetShopped Support Forums https://wordpress.org/plugins/bbpress-vip-support-plugin/
+
+Made compatible for 4.4 version by roshanbh 
 
 Added by dtbaker: topic voting and user registration sidebar, as seen here: http://ultimateclientmanager.com/forums/forum/feature-requests/
 

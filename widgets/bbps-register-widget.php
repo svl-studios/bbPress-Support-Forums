@@ -11,7 +11,7 @@ class bbps_support_register_widget extends WP_Widget {
 
         add_action('login_form_register', array(&$this, 'register'));
         add_filter('validate_username', array(&$this, 'validate_username'), 10, 2);
-		$this->WP_Widget('bbps_support_register_widget', 'Registration', $widget_ops);
+		parent::__construct('bbps_support_register_widget', 'Registration', $widget_ops);
 	}
 
 	function form( $instance ){

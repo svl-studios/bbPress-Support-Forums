@@ -7,7 +7,7 @@ class bbps_support_resolved_count_widget extends WP_Widget {
 				'description' => 'Dsiplay a count of resolved topics in your forum'
 		);
 		
-		$this->WP_Widget('bbps_support_resolved_count_widget', 'Resolved Topic Count', $widget_ops);
+		parent::__construct('bbps_support_resolved_count_widget', 'Resolved Topic Count', $widget_ops);
 	}
 	
 	function form( $instance ){
