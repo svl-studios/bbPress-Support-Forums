@@ -144,12 +144,12 @@ add_action( 'wp_enqueue_scripts', 'bbps_stylesheet' );
 add_action( 'widgets_init', 'bbps_register_widgets' );
 
 function bbps_register_widgets() {
-	register_widget( 'bbps_support_hours_widget' );
-	register_widget( 'bbps_support_resolved_count_widget' );
-	register_widget( 'bbps_support_urgent_topics_widget' );
-	register_widget( 'bbps_support_recently_resolved_widget' );
-	register_widget( 'bbps_claimed_topics_widget' );
-	register_widget( 'bbps_support_register_widget' );
+	register_widget( 'Bbps_Support_Hours_Widget' );
+	register_widget( 'Bbps_Support_Resolved_Count_Widget' );
+	register_widget( 'Bbps_Support_Urgent_Topics_Widget' );
+	register_widget( 'Bbps_Support_Recently_Resolved_Widget' );
+	register_widget( 'Bbps_Claimed_Topics_Widget' );
+	register_widget( 'Bbps_Support_Register_Widget' );
 }
 
 

@@ -7,111 +7,153 @@ plugin.
 
 defined( 'ABSPATH' ) || exit;
 
-/*
-Checks if the current forum is a premium one
-@return (bol)
-*/
-function bbps_is_premium_forum( $forum_id ) {
+/**
+ * Checks if the current forum is a premium one
+ *
+ * @param mixed $forum_id Forum ID.
+ *
+ * @return bool
+ */
+function bbps_is_premium_forum( $forum_id ): bool {
+	$premium_forum = (bool) get_post_meta( $forum_id, '_bbps_is_premium', true );
 
-	$premium_forum = get_post_meta( $forum_id, '_bbps_is_premium', true );
-	if ( $premium_forum == 1 ) {
+	if ( true === $premium_forum ) {
 		return true;
 	} else {
 		return false;
 	}
 }
 
+/**
+ * Is support forum.
+ *
+ * @param mixed $forum_id Forum ID.
+ *
+ * @return bool
+ */
+function bbps_is_support_forum( $forum_id ): bool {
+	$support_forum = (bool) get_post_meta( $forum_id, '_bbps_is_support', true );
 
-function bbps_is_support_forum( $forum_id ) {
-
-	$support_forum = get_post_meta( $forum_id, '_bbps_is_support', true );
-	if ( $support_forum == 1 ) {
+	if ( true === $support_forum ) {
 		return true;
 	} else {
 		return false;
 	}
 }
 
-function bbps_is_voting_forum( $forum_id ) {
+/**
+ * Is voting forum.
+ *
+ * @param mixed $forum_id Forum ID.
+ *
+ * @return bool
+ */
+function bbps_is_voting_forum( $forum_id ): bool {
+	$voting_forum = (bool) get_post_meta( $forum_id, '_bbps_is_voting', true );
 
-	$voting_forum = get_post_meta( $forum_id, '_bbps_is_voting', true );
-	if ( $voting_forum == 1 ) {
+	if ( true === $voting_forum ) {
 		return true;
 	} else {
 		return false;
 	}
 }
 
-// must be used without the topic loop checks if the topic is part of the prem forum
-function bbps_is_topic_premium2( $id ) {
+/**
+ * Must be used without the topic loop checks if the topic is part of the prem forum.
+ *
+ * @param mixed $id Forum ID.
+ *
+ * @return bool
+ */
+function bbps_is_topic_premium2( $id ): bool {
 	$is_premium = get_post_meta( $id, '_bbps_is_premium' );
 
-	if ( $is_premium[0] == 1 ) {
+	if ( true === (bool) $is_premium[0] ) {
 		return true;
 	} else {
 		return false;
 	}
 }
 
-function bbps_is_topic_premium() {
+/**
+ * Is topic premium.
+ *
+ * @return bool
+ */
+function bbps_is_topic_premium(): bool {
 	$is_premium = get_post_meta( bbp_get_topic_forum_id(), '_bbps_is_premium' );
-	if ( $is_premium[0] == 1 ) {
+
+	if ( true === (bool) $is_premium[0] ) {
 		return true;
 	} else {
 		return false;
 	}
 }
 
-function bbps_is_reply_premium() {
-
+/**
+ * Is reply premium.
+ *
+ * @return bool
+ */
+function bbps_is_reply_premium(): bool {
 	$is_premium = get_post_meta( bbp_get_reply_forum_id(), '_bbps_is_premium' );
-	if ( $is_premium[0] == 1 ) {
+
+	if ( true === (bool) $is_premium[0] ) {
 		return true;
 	} else {
 		return false;
 	}
 }
 
-function bbps_get_all_premium_topic_ids() {
+/**
+ * Get all premium topic IDs.
+ *
+ * @return array
+ */
+function bbps_get_all_premium_topic_ids(): array {
 	global $wpdb;
+
+	// phpcs:disable
 	$forum_query    = 'SELECT `post_id` FROM ' . $wpdb->postmeta . " WHERE `meta_key` = '_bbps_is_premium'";
 	$premium_forums = $wpdb->get_col( $forum_query );
 
 	$exclude        = implode( ',', $premium_forums );
 	$topics_query   = 'SELECT `id` FROM ' . $wpdb->posts . ' WHERE `post_parent` IN (' . $exclude . ')';
-	$premium_topics = $wpdb->get_col( $topics_query );
 
-	return $premium_topics;
+	return $wpdb->get_col( $topics_query );
+	// phpcs:enable
 }
 
-/*
-Display a support forum drop down list of
-only forums that have been marked as premium
-*/
-
+/**
+ * Display a support forum drop down list of only forums that have been marked as premium.
+ */
 function bbps_support_forum_ddl() {
 	global $wpdb;
 
 	$sql               = 'SELECT `post_id` FROM ' . $wpdb->postmeta . " WHERE `meta_key` = '_bbps_is_premium' AND `meta_value` = '1'";
-	$premium_forum_ids = $wpdb->get_col( $sql );
+	$premium_forum_ids = $wpdb->get_col( $sql ); // phpcs:ignore
 
 	$select = '<select id="bbp_forum_id" name="bbp_forum_id">';
 	foreach ( $premium_forum_ids as $id ) {
-		$select .= '<option value="' . $id . '">' . get_the_title( $id ) . '</option>';
+		$select .= '<option value="' . esc_attr( $id ) . '">' . esc_html( get_the_title( $id ) ) . '</option>';
 	}
+
 	$select .= '</select>';
-	echo $select;
+
+	echo $select; // phpcs:ignore WordPress.Security.EscapeOutput
 }
 
-function bbps_topic_resolved( $topic_id ) {
-	if ( get_post_meta( $topic_id, '_bbps_topic_status', true ) == 2 ) {
+/**
+ * Get resolved status.
+ *
+ * @param mixed $topic_id Topic ID.
+ *
+ * @return bool
+ */
+function bbps_topic_resolved( $topic_id ): bool {
+	if ( 2 === (int) get_post_meta( $topic_id, '_bbps_topic_status', true ) ) {
 		return true;
 	} else {
 		return false;
 	}
 }
-
-
-
-
-
