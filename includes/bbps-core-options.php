@@ -25,7 +25,7 @@ function bbps_add_options() {
 		// defaults for who can change the topic status.
 		'_bbps_status_permissions'        => '',
 		// the reply counts / boundaries for the custom forum poster titles this has no default as the user must set these.
-		'_bbps_reply_count'               => '',
+		'_bbps_reply_count'               => array(),
 		// the status people want to show on their topics.
 		'_bbps_used_status'               => '',
 		// give admin and forum moderators the ability to move topics into other forums default = enabled.
